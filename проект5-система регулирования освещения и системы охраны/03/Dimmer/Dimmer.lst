@@ -1,0 +1,698 @@
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ; === копирайт и копилефт
+                      00002 ; Анастасия Попкова, г. Саратов
+                      00003 ; e-mail: nastpop@mail.ru
+                      00004 ; "Регулятор мощности паяльника
+                      00005 ; с цифровой индикацией и кнопочным управлением"
+                      00006 ; на конкурс "Поздравь Кота по-человечески 2008"
+                      00007 
+                      00008             #include    P16F628A.INC
+                      00001         LIST
+                      00002 ; P16F628A.INC  Standard Header File, Version 1.10    Microchip Technology, Inc.
+                      00265         LIST
+                      00266 
+2007   3F30           00009             __CONFIG    _INTRC_OSC_NOCLKOUT & _WDT_OFF & _PWRTE_ON & _BODEN_OFF & _MCLRE_ON & _LVP_OFF &
+                             _DATA_CP_OFF & _CP_OFF
+                      00010 
+                      00011             ;#include    P16F84A.INC
+                      00012             ;__CONFIG    _HS_OSC & _WDT_OFF & _PWRTE_ON & _CP_OFF
+                      00013 
+                      00014             cblock      20h
+  00000020            00015 Reg:3
+  00000023            00016 уровень
+                      00017             endc
+                      00018 
+                      00019             #include    pause.mac
+                      00001 ; === макросы задержек
+                      00002 
+                      00003 Pause1      macro       t1
+                      00004             local       wr ; объявление локальной метки !
+                      00005             movlw       t1
+                      00006             movwf       Reg
+                      00007 wr          decfsz      Reg, F
+                      00008             goto        wr
+                      00009             endm
+                      00010 
+                      00011 Pause2      macro       t1,t2
+                      00012             local       wr ; объявление локальной метки !
+                      00013             movlw       t1
+                      00014             movwf       Reg
+                      00015             movlw       t2
+                      00016             movwf       Reg+1
+                      00017 wr          decfsz      Reg, F
+                      00018             goto        wr
+                      00019             decfsz      Reg+1, F
+                      00020             goto        wr
+                      00021             endm
+                      00022 
+                      00023 Pause3      macro       t1,t2,t3
+                      00024             local       wr ; объявление локальной метки !
+                      00025             movlw       t1
+                      00026             movwf       Reg
+                      00027             movlw       t2
+                      00028             movwf       Reg+1
+                      00029             movlw       t3
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00030             movwf       Reg+2
+                      00031 wr          decfsz      Reg, F
+                      00032             goto        wr
+                      00033             decfsz      Reg+1, F
+                      00034             goto        wr
+                      00035             decfsz      Reg+2, F
+                      00036             goto        wr
+                      00037             endm
+                      00020             #include    alias.asm
+                      00001 ; === файл синонимов
+                      00002 
+                      00003 #define     кн1              PORTA,0  ; кнопка 1
+                      00004 #define     кн2              PORTA,1  ; кнопка 2
+                      00005 
+                      00006 #define     сенсор           PORTA,2  ; Zero Cross
+                      00007 
+                      00008 #define     вкл         bcf  PORTA,3  ; вкл  триак
+                      00009 #define     откл        bsf  PORTA,3  ; откл триак
+                      00010 
+                      00011 #define     _. .1   ; RB0
+                      00012 #define     _C .2   ; RB1
+                      00013 #define     _D .4   ; RB2
+                      00014 #define     _E .8   ; RB3
+                      00015 #define     _B .16  ; RB4
+                      00016 #define     _A .32  ; RB5
+                      00017 #define     _F .64  ; RB6
+                      00018 #define     _G .128 ; RB7
+                      00019 
+                      00020 ; если индикатор с общим анодом, то сумму
+                      00021 ; нужно отнять от 255, например, для 
+                      00022 ; символа "1" написать 255-(_B+_C)
+                      00023 #define     _0 addlw (_A+_B+_C+_D+_E+_F)
+                      00024 #define     _1 addlw (_B+_C)
+                      00025 #define     _2 addlw (_A+_B+_G+_E+_D)
+                      00026 #define     _3 addlw (_A+_B+_G+_C+_D)
+                      00027 #define     _4 addlw (_F+_G+_B+_C)
+                      00028 #define     _5 addlw (_A+_F+_G+_C+_D)
+                      00029 #define     _6 addlw (_A+_F+_G+_C+_D+_E)
+                      00030 #define     _7 addlw (_A+_B+_C)
+                      00031 #define     _8 addlw (_A+_B+_C+_D+_E+_F+_G)
+                      00032 #define     _9 addlw (_A+_B+_C+_D+_F+_G)
+                      00033 #define     _Н addlw (_B+_C+_E+_F+_G)
+                      00034 
+                      00035 ; и сразу макрос по отрисовке на индикатор
+                      00036 рисуем      macro xxx
+                      00037             clrw
+                      00038             xxx
+                      00039             movwf PORTB
+                      00040             endm
+                      00021 
+                      00022 ; === подготовка микроконтроллера
+0000   1683           00023             bsf         STATUS,RP0  ; в Банк 1 
+0001   3017           00024             movlw       b'10111'
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0002   0085           00025             movwf       TRISA
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0003   0186           00026             clrf        TRISB
+0004   1283           00027             bcf         STATUS,RP0  ; в Банк 0
+0005   0186           00028             clrf        PORTB
+0006   30FF           00029             movlw       b'11111111' ; отключение
+0007   009F           00030             movwf       CMCON       ; компараторов
+0008   018B           00031             clrf        INTCON      ; для pic16f628a
+                      00032 
+                      00033 ; === работа
+0009   01A3           00034             clrf        уровень
+000A                  00035 цикл        ; опрос кнопок
+000A   1C05           00036             btfss       кн1
+000B   2012           00037             call        увеличить
+000C   1C85           00038             btfss       кн2
+000D   2014           00039             call        уменьшить
+000E   2035           00040             call        задержка
+000F   1585           00041             откл
+0010   202D           00042             call        ZC ; Zero-Cross
+0011   280A           00043             goto        цикл
+                      00044 
+                      00045             #include    fragments.asm ; подпрограммы
+                      00001 ; === ПОДПРОГРАММЫ
+                      00002 
+                      00003 ; === изменение уровня
+0012   0AA3           00004 увеличить   incf        уровень,F
+0013   2815           00005             goto        $+2
+0014   03A3           00006 уменьшить   decf        уровень,F
+                      00007             ; 0 <= уровень <= 10
+0015   0823           00008             movf        уровень,W
+0016   3AFF           00009             xorlw       .255
+0017   1903           00010             btfsc       STATUS,Z
+0018   0AA3           00011             incf        уровень,F
+0019   0823           00012             movf        уровень,W
+001A   3EF5           00013             addlw       .245
+001B   1803           00014             btfsc       STATUS,C
+001C   03A3           00015             decf        уровень,F
+001D   1803           00016             btfsc       STATUS,C
+001E   2819           00017             goto        $-5
+001F   1585           00018             откл
+                      00019             Pause3      .169,.69,.2
+  0000                    M             local       wr ; объявление локальной метки !
+0020   30A9               M             movlw       .169
+0021   00A0               M             movwf       Reg
+0022   3045               M             movlw       .69
+0023   00A1               M             movwf       Reg+1
+0024   3002               M             movlw       .2
+0025   00A2               M             movwf       Reg+2
+0026   0BA0               M wr          decfsz      Reg, F
+0027   2826               M             goto        wr
+0028   0BA1               M             decfsz      Reg+1, F
+0029   2826               M             goto        wr
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+002A   0BA2               M             decfsz      Reg+2, F
+002B   2826               M             goto        wr
+002C   0008           00020             return
+                      00021 
+                      00022 ; === ожидание перехода через "0"
+002D   1D05           00023 ZC          btfss       сенсор
+002E   2832           00024             goto        $+4
+002F   1905           00025             btfsc       сенсор      ; выход из "+" полуволны
+0030   282F           00026             goto        $-1
+0031   0008           00027             return
+0032   1D05           00028             btfss       сенсор      ; выход из "-" полуволны
+0033   2832           00029             goto        $-1
+0034   0008           00030             return
+                      00031 
+                      00032 ; === привязка уровня к задержке
+0035   0823           00033 задержка    movf        уровень,W
+0036   3A0A           00034             xorlw       .10
+0037   1903           00035             btfsc       STATUS,Z
+0038   2862           00036             goto        П10         ; max уровень
+                      00037 
+0039   0823           00038             movf        уровень,W
+003A   3A00           00039             xorlw       .0
+003B   1903           00040             btfsc       STATUS,Z
+003C   2867           00041             goto        П0          ; min уровень
+                      00042 
+003D   0823           00043             movf        уровень,W
+003E   3A01           00044             xorlw       .1
+003F   1903           00045             btfsc       STATUS,Z
+0040   286B           00046             goto        П1
+                      00047 
+0041   0823           00048             movf        уровень,W
+0042   3A02           00049             xorlw       .2
+0043   1903           00050             btfsc       STATUS,Z
+0044   2878           00051             goto        П2            
+                      00052 
+0045   0823           00053             movf        уровень,W
+0046   3A03           00054             xorlw       .3
+0047   1903           00055             btfsc       STATUS,Z
+0048   2885           00056             goto        П3
+                      00057 
+0049   0823           00058             movf        уровень,W
+004A   3A04           00059             xorlw       .4
+004B   1903           00060             btfsc       STATUS,Z
+004C   2892           00061             goto        П4
+                      00062 
+004D   0823           00063             movf        уровень,W
+004E   3A05           00064             xorlw       .5
+004F   1903           00065             btfsc       STATUS,Z
+0050   289F           00066             goto        П5
+                      00067 
+0051   0823           00068             movf        уровень,W
+0052   3A06           00069             xorlw       .6
+0053   1903           00070             btfsc       STATUS,Z
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0054   28AC           00071             goto        П6
+                      00072 
+0055   0823           00073             movf        уровень,W
+0056   3A07           00074             xorlw       .7
+0057   1903           00075             btfsc       STATUS,Z
+0058   28B9           00076             goto        П7
+                      00077 
+0059   0823           00078             movf        уровень,W
+005A   3A08           00079             xorlw       .8
+005B   1903           00080             btfsc       STATUS,Z
+005C   28C6           00081             goto        П8
+                      00082 
+005D   0823           00083             movf        уровень,W
+005E   3A09           00084             xorlw       .9
+005F   1903           00085             btfsc       STATUS,Z
+0060   28D3           00086             goto        П9
+                      00087 
+0061   0008           00088             return ; страховочный возврат
+                      00089 
+                      00090 ; === собственно сами задержки
+0062   1185           00091 П10         вкл
+                      00092             рисуем      _Н
+0063   0103               M             clrw
+0064   3EDA               M             addlw (.16+.2+.8+.64+.128)
+0065   0086               M             movwf PORTB
+                      00093             ; далее команда вызывает переполнение стека
+                      00094             ; но в данном месте это не критично
+0066   280A           00095             goto        цикл ; <- это она
+                      00096 
+                      00097 П0          рисуем      _0
+0067   0103               M             clrw
+0068   3E7E               M             addlw (.32+.16+.2+.4+.8+.64)
+0069   0086               M             movwf PORTB
+006A   0008           00098             return
+                      00099 
+                      00100 П1          Pause2      .21,.10 ; 7000 мкс
+  0000                    M             local       wr ; объявление локальной метки !
+006B   3015               M             movlw       .21
+006C   00A0               M             movwf       Reg
+006D   300A               M             movlw       .10
+006E   00A1               M             movwf       Reg+1
+006F   0BA0               M wr          decfsz      Reg, F
+0070   286F               M             goto        wr
+0071   0BA1               M             decfsz      Reg+1, F
+0072   286F               M             goto        wr
+0073   1185           00101             вкл
+                      00102             рисуем      _1
+0074   0103               M             clrw
+0075   3E12               M             addlw (.16+.2)
+0076   0086               M             movwf PORTB
+0077   0008           00103             return
+                      00104 
+                      00105 П2          Pause2      .111,.9 ; 6500 мкс
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  0000                    M             local       wr ; объявление локальной метки !
+0078   306F               M             movlw       .111
+0079   00A0               M             movwf       Reg
+007A   3009               M             movlw       .9
+007B   00A1               M             movwf       Reg+1
+007C   0BA0               M wr          decfsz      Reg, F
+007D   287C               M             goto        wr
+007E   0BA1               M             decfsz      Reg+1, F
+007F   287C               M             goto        wr
+0080   1185           00106             вкл
+                      00107             рисуем      _2
+0081   0103               M             clrw
+0082   3EBC               M             addlw (.32+.16+.128+.8+.4)
+0083   0086               M             movwf PORTB
+0084   0008           00108             return
+                      00109 
+                      00110 П3          Pause2      .201,.8 ; 6000 мкс
+  0000                    M             local       wr ; объявление локальной метки !
+0085   30C9               M             movlw       .201
+0086   00A0               M             movwf       Reg
+0087   3008               M             movlw       .8
+0088   00A1               M             movwf       Reg+1
+0089   0BA0               M wr          decfsz      Reg, F
+008A   2889               M             goto        wr
+008B   0BA1               M             decfsz      Reg+1, F
+008C   2889               M             goto        wr
+008D   1185           00111             вкл
+                      00112             рисуем      _3
+008E   0103               M             clrw
+008F   3EB6               M             addlw (.32+.16+.128+.2+.4)
+0090   0086               M             movwf PORTB
+0091   0008           00113             return
+                      00114 
+                      00115 П4          Pause2      .35,.8 ; 5500 мкс
+  0000                    M             local       wr ; объявление локальной метки !
+0092   3023               M             movlw       .35
+0093   00A0               M             movwf       Reg
+0094   3008               M             movlw       .8
+0095   00A1               M             movwf       Reg+1
+0096   0BA0               M wr          decfsz      Reg, F
+0097   2896               M             goto        wr
+0098   0BA1               M             decfsz      Reg+1, F
+0099   2896               M             goto        wr
+009A   1185           00116             вкл
+                      00117             рисуем      _4
+009B   0103               M             clrw
+009C   3ED2               M             addlw (.64+.128+.16+.2)
+009D   0086               M             movwf PORTB
+009E   0008           00118             return
+                      00119 
+                      00120 П5          Pause2      .125,.7 ; 5000 мкс
+  0000                    M             local       wr ; объявление локальной метки !
+009F   307D               M             movlw       .125
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00A0   00A0               M             movwf       Reg
+00A1   3007               M             movlw       .7
+00A2   00A1               M             movwf       Reg+1
+00A3   0BA0               M wr          decfsz      Reg, F
+00A4   28A3               M             goto        wr
+00A5   0BA1               M             decfsz      Reg+1, F
+00A6   28A3               M             goto        wr
+00A7   1185           00121             вкл
+                      00122             рисуем      _5
+00A8   0103               M             clrw
+00A9   3EE6               M             addlw (.32+.64+.128+.2+.4)
+00AA   0086               M             movwf PORTB
+00AB   0008           00123             return
+                      00124 
+                      00125 П6          Pause2      .215,.6 ; 4500 мкс
+  0000                    M             local       wr ; объявление локальной метки !
+00AC   30D7               M             movlw       .215
+00AD   00A0               M             movwf       Reg
+00AE   3006               M             movlw       .6
+00AF   00A1               M             movwf       Reg+1
+00B0   0BA0               M wr          decfsz      Reg, F
+00B1   28B0               M             goto        wr
+00B2   0BA1               M             decfsz      Reg+1, F
+00B3   28B0               M             goto        wr
+00B4   1185           00126             вкл
+                      00127             рисуем      _6
+00B5   0103               M             clrw
+00B6   3EEE               M             addlw (.32+.64+.128+.2+.4+.8)
+00B7   0086               M             movwf PORTB
+00B8   0008           00128             return
+                      00129 
+                      00130 П7          Pause2      .48,.6 ; 4000 мкс
+  0000                    M             local       wr ; объявление локальной метки !
+00B9   3030               M             movlw       .48
+00BA   00A0               M             movwf       Reg
+00BB   3006               M             movlw       .6
+00BC   00A1               M             movwf       Reg+1
+00BD   0BA0               M wr          decfsz      Reg, F
+00BE   28BD               M             goto        wr
+00BF   0BA1               M             decfsz      Reg+1, F
+00C0   28BD               M             goto        wr
+00C1   1185           00131             вкл
+                      00132             рисуем      _7
+00C2   0103               M             clrw
+00C3   3E32               M             addlw (.32+.16+.2)
+00C4   0086               M             movwf PORTB
+00C5   0008           00133             return
+                      00134 
+                      00135 П8          Pause2      .138,.5 ; 3500 мкс
+  0000                    M             local       wr ; объявление локальной метки !
+00C6   308A               M             movlw       .138
+00C7   00A0               M             movwf       Reg
+00C8   3005               M             movlw       .5
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00C9   00A1               M             movwf       Reg+1
+00CA   0BA0               M wr          decfsz      Reg, F
+00CB   28CA               M             goto        wr
+00CC   0BA1               M             decfsz      Reg+1, F
+00CD   28CA               M             goto        wr
+00CE   1185           00136             вкл
+                      00137             рисуем      _8
+00CF   0103               M             clrw
+00D0   3EFE               M             addlw (.32+.16+.2+.4+.8+.64+.128)
+00D1   0086               M             movwf PORTB
+00D2   0008           00138             return
+                      00139 
+                      00140 П9          Pause2      .228,.4 ; 3000 мкс
+  0000                    M             local       wr ; объявление локальной метки !
+00D3   30E4               M             movlw       .228
+00D4   00A0               M             movwf       Reg
+00D5   3004               M             movlw       .4
+00D6   00A1               M             movwf       Reg+1
+00D7   0BA0               M wr          decfsz      Reg, F
+00D8   28D7               M             goto        wr
+00D9   0BA1               M             decfsz      Reg+1, F
+00DA   28D7               M             goto        wr
+00DB   1185           00141             вкл
+                      00142             рисуем      _9
+00DC   0103               M             clrw
+00DD   3EF6               M             addlw (.32+.16+.2+.4+.64+.128)
+00DE   0086               M             movwf PORTB
+00DF   0008           00143             return
+                      00046 
+                      00047             end
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE  9
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ADEN                              00000003
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCPR1H                            00000016
+CCPR1L                            00000015
+CIS                               00000003
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000001F
+CMIE                              00000006
+CMIF                              00000006
+CREN                              00000004
+CSRC                              00000007
+DC                                00000001
+EEADR                             0000009B
+EECON1                            0000009C
+EECON2                            0000009D
+EEDATA                            0000009A
+EEIE                              00000007
+EEIF                              00000007
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+GIE                               00000007
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+NOT_BO                            00000000
+NOT_BOD                           00000000
+NOT_BOR                           00000000
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+OERR                              00000001
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE 10
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+OPTION_REG                        00000081
+OSCF                              00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PIE1                              0000008C
+PIR1                              0000000C
+PORTA                             00000005
+PORTB                             00000006
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+Pause1                            
+Pause2                            
+Pause3                            
+RBIE                              00000003
+RBIF                              00000000
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RP0                               00000005
+RP1                               00000006
+RX9                               00000006
+RX9D                              00000000
+Reg                               00000020
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+STATUS                            00000003
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1OSCEN                           00000003
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TMR0                              00000001
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE 11
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISB                             00000086
+TRMT                              00000001
+TX9                               00000006
+TX9D                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+VR0                               00000000
+VR1                               00000001
+VR2                               00000002
+VR3                               00000003
+VRCON                             0000009F
+VREN                              00000007
+VROE                              00000006
+VRR                               00000005
+W                                 00000000
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+ZC                                0000002D
+_.                                .1
+_A                                .32
+_B                                .16
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_C                                .2
+_CP_OFF                           00003FFF
+_CP_ON                            00001FFF
+_D                                .4
+_DATA_CP_OFF                      00003FFF
+_DATA_CP_ON                       00003EFF
+_E                                .8
+_ER_OSC_CLKOUT                    00003FFF
+_ER_OSC_NOCLKOUT                  00003FFE
+_EXTCLK_OSC                       00003FEF
+_F                                .64
+_G                                .128
+_HS_OSC                           00003FEE
+_INTOSC_OSC_CLKOUT                00003FFD
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE 12
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_INTOSC_OSC_NOCLKOUT              00003FFC
+_INTRC_OSC_CLKOUT                 00003FFD
+_INTRC_OSC_NOCLKOUT               00003FFC
+_LP_OSC                           00003FEC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_MCLRE_OFF                        00003FDF
+_MCLRE_ON                         00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC_CLKOUT                    00003FFF
+_RC_OSC_NOCLKOUT                  00003FFE
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FED
+__16F628A                         00000001
+_Н                                addlw (_B+_C+_E+_F+_G)
+П0                                00000067
+П1                                0000006B
+П10                               00000062
+П2                                00000078
+П3                                00000085
+П4                                00000092
+П5                                0000009F
+П6                                000000AC
+П7                                000000B9
+П8                                000000C6
+П9                                000000D3
+вкл                               bcf  PORTA,3
+задержка                          00000035
+кн1                               PORTA,0
+кн2                               PORTA,1
+откл                              bsf  PORTA,3
+рисуем                            
+сенсор                            PORTA,2
+увеличить                         00000012
+уменьшить                         00000014
+уровень                           00000023
+цикл                              0000000A
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+MPASM  5.06                        DIMMER.ASM   8-25-2008  4:22:50         PAGE 13
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+
+00C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX ---------------- ----------------
+2000 : -------X-------- ---------------- ---------------- ----------------
+
+All other memory blocks unused.
+
+Program Memory Words Used:   224
+Program Memory Words Free:  1824
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     2 reported,     0 suppressed
+
+

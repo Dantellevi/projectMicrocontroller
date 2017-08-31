@@ -1,0 +1,756 @@
+
+Project_Robot.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         000002f6  00000000  00000000  00000074  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00800060  00800060  0000036a  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000002  00800060  00800060  0000036a  2**0
+                  ALLOC
+  3 .comment      00000030  00000000  00000000  0000036a  2**0
+                  CONTENTS, READONLY
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  0000039c  2**2
+                  CONTENTS, READONLY
+  5 .debug_aranges 000000d8  00000000  00000000  000003d8  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_info   000007f9  00000000  00000000  000004b0  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_abbrev 000002f6  00000000  00000000  00000ca9  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_line   0000041e  00000000  00000000  00000f9f  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_frame  000001d4  00000000  00000000  000013c0  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_str    000002ab  00000000  00000000  00001594  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    000002e5  00000000  00000000  0000183f  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_ranges 000000b8  00000000  00000000  00001b24  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	12 c0       	rjmp	.+36     	; 0x26 <__ctors_end>
+   2:	59 c0       	rjmp	.+178    	; 0xb6 <__vector_1>
+   4:	20 c0       	rjmp	.+64     	; 0x46 <__bad_interrupt>
+   6:	1f c0       	rjmp	.+62     	; 0x46 <__bad_interrupt>
+   8:	1e c0       	rjmp	.+60     	; 0x46 <__bad_interrupt>
+   a:	1d c0       	rjmp	.+58     	; 0x46 <__bad_interrupt>
+   c:	1c c0       	rjmp	.+56     	; 0x46 <__bad_interrupt>
+   e:	1b c0       	rjmp	.+54     	; 0x46 <__bad_interrupt>
+  10:	1a c0       	rjmp	.+52     	; 0x46 <__bad_interrupt>
+  12:	19 c0       	rjmp	.+50     	; 0x46 <__bad_interrupt>
+  14:	18 c0       	rjmp	.+48     	; 0x46 <__bad_interrupt>
+  16:	17 c0       	rjmp	.+46     	; 0x46 <__bad_interrupt>
+  18:	16 c0       	rjmp	.+44     	; 0x46 <__bad_interrupt>
+  1a:	15 c0       	rjmp	.+42     	; 0x46 <__bad_interrupt>
+  1c:	14 c0       	rjmp	.+40     	; 0x46 <__bad_interrupt>
+  1e:	13 c0       	rjmp	.+38     	; 0x46 <__bad_interrupt>
+  20:	12 c0       	rjmp	.+36     	; 0x46 <__bad_interrupt>
+  22:	11 c0       	rjmp	.+34     	; 0x46 <__bad_interrupt>
+  24:	10 c0       	rjmp	.+32     	; 0x46 <__bad_interrupt>
+
+00000026 <__ctors_end>:
+  26:	11 24       	eor	r1, r1
+  28:	1f be       	out	0x3f, r1	; 63
+  2a:	cf e5       	ldi	r28, 0x5F	; 95
+  2c:	d4 e0       	ldi	r29, 0x04	; 4
+  2e:	de bf       	out	0x3e, r29	; 62
+  30:	cd bf       	out	0x3d, r28	; 61
+
+00000032 <__do_clear_bss>:
+  32:	20 e0       	ldi	r18, 0x00	; 0
+  34:	a0 e6       	ldi	r26, 0x60	; 96
+  36:	b0 e0       	ldi	r27, 0x00	; 0
+  38:	01 c0       	rjmp	.+2      	; 0x3c <.do_clear_bss_start>
+
+0000003a <.do_clear_bss_loop>:
+  3a:	1d 92       	st	X+, r1
+
+0000003c <.do_clear_bss_start>:
+  3c:	a2 36       	cpi	r26, 0x62	; 98
+  3e:	b2 07       	cpc	r27, r18
+  40:	e1 f7       	brne	.-8      	; 0x3a <.do_clear_bss_loop>
+  42:	a3 d0       	rcall	.+326    	; 0x18a <main>
+  44:	56 c1       	rjmp	.+684    	; 0x2f2 <_exit>
+
+00000046 <__bad_interrupt>:
+  46:	dc cf       	rjmp	.-72     	; 0x0 <__vectors>
+
+00000048 <Port_ini>:
+
+#include "Main.h"
+
+void Port_ini(void)//инициализация портов микроконтроллера
+{
+	DDRC=0xFF;
+  48:	8f ef       	ldi	r24, 0xFF	; 255
+  4a:	84 bb       	out	0x14, r24	; 20
+	PORTC=0x00;
+  4c:	15 ba       	out	0x15, r1	; 21
+	DDRD|=(1<<PD3);
+  4e:	8b 9a       	sbi	0x11, 3	; 17
+	DDRD|=(1<<PD4);
+  50:	8c 9a       	sbi	0x11, 4	; 17
+	DDRD|=(1<<PD5);
+  52:	8d 9a       	sbi	0x11, 5	; 17
+	DDRD|=(1<<PD6);
+  54:	8e 9a       	sbi	0x11, 6	; 17
+	
+	PORTD&=~(1<<PD3);
+  56:	93 98       	cbi	0x12, 3	; 18
+	PORTD&=~(1<<PD4);
+  58:	94 98       	cbi	0x12, 4	; 18
+	PORTD&=~(1<<PD5);
+  5a:	95 98       	cbi	0x12, 5	; 18
+	PORTD&=~(1<<PD6);
+  5c:	96 98       	cbi	0x12, 6	; 18
+	
+	DDRB|=(1<<PB0);
+  5e:	b8 9a       	sbi	0x17, 0	; 23
+	DDRB|=(1<<PB6);
+  60:	be 9a       	sbi	0x17, 6	; 23
+	DDRB|=(1<<PB7);
+  62:	bf 9a       	sbi	0x17, 7	; 23
+	PORTB&=~(1<<PB6);
+  64:	c6 98       	cbi	0x18, 6	; 24
+	PORTB&=~(1<<PB7);
+  66:	c7 98       	cbi	0x18, 7	; 24
+	PORTB&=~(1<<PB0);
+  68:	c0 98       	cbi	0x18, 0	; 24
+  6a:	08 95       	ret
+
+0000006c <HC_SR04_init>:
+
+
+//Инициализация модуля HC-SR04
+void HC_SR04_init(void)
+{
+	Trig_DDr|=1<<Trig_N;
+  6c:	8f 9a       	sbi	0x11, 7	; 17
+	Trig_Port&=~(1<<Trig_N);
+  6e:	97 98       	cbi	0x12, 7	; 18
+	
+	
+	Echo_ddr&=~(1<<Echo_N);
+  70:	8a 98       	cbi	0x11, 2	; 17
+	Echo_Port&=~(1<<Echo_N);
+  72:	92 98       	cbi	0x12, 2	; 18
+  74:	08 95       	ret
+
+00000076 <HC_SR04_Send_strob>:
+}
+
+// функция посылки стробирующего импульса
+void HC_SR04_Send_strob(void)
+{
+	Trig_Port|=(1<<Trig_N);
+  76:	97 9a       	sbi	0x12, 7	; 18
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+  78:	86 e0       	ldi	r24, 0x06	; 6
+  7a:	8a 95       	dec	r24
+  7c:	f1 f7       	brne	.-4      	; 0x7a <HC_SR04_Send_strob+0x4>
+  7e:	00 c0       	rjmp	.+0      	; 0x80 <HC_SR04_Send_strob+0xa>
+	_delay_us(20);
+	Trig_Port&=~(1<<Trig_N);
+  80:	97 98       	cbi	0x12, 7	; 18
+  82:	08 95       	ret
+
+00000084 <init_interupt>:
+	
+}
+//инициализация прерывания микроконтроллера
+void init_interupt(void)
+{
+	MCUCR|=(1<<ISC00);
+  84:	85 b7       	in	r24, 0x35	; 53
+  86:	81 60       	ori	r24, 0x01	; 1
+  88:	85 bf       	out	0x35, r24	; 53
+	GICR|=(1<<INT0);
+  8a:	8b b7       	in	r24, 0x3b	; 59
+  8c:	80 64       	ori	r24, 0x40	; 64
+  8e:	8b bf       	out	0x3b, r24	; 59
+  90:	08 95       	ret
+
+00000092 <timer_Start_stop>:
+//Функция запуска/остановки таймера/счетчика
+unsigned int timer_Start_stop(char flag)
+{
+	unsigned int rez;
+	
+	if (flag)
+  92:	88 23       	and	r24, r24
+  94:	31 f0       	breq	.+12     	; 0xa2 <timer_Start_stop+0x10>
+	{
+		TCNT1H=0;
+  96:	1d bc       	out	0x2d, r1	; 45
+		TCNT1L=0;
+  98:	1c bc       	out	0x2c, r1	; 44
+		TCCR1B|=(1<<CS11);
+  9a:	8e b5       	in	r24, 0x2e	; 46
+  9c:	82 60       	ori	r24, 0x02	; 2
+  9e:	8e bd       	out	0x2e, r24	; 46
+  a0:	08 95       	ret
+	}
+	else{
+	TCCR1B&=~(1<<CS11);
+  a2:	8e b5       	in	r24, 0x2e	; 46
+  a4:	8d 7f       	andi	r24, 0xFD	; 253
+  a6:	8e bd       	out	0x2e, r24	; 46
+	rez=TCNT1H;
+  a8:	8d b5       	in	r24, 0x2d	; 45
+  aa:	90 e0       	ldi	r25, 0x00	; 0
+	rez<<=8;
+  ac:	98 2f       	mov	r25, r24
+  ae:	88 27       	eor	r24, r24
+	rez|=TCNT1L;
+  b0:	2c b5       	in	r18, 0x2c	; 44
+	
+	
+	return rez;
+  b2:	82 2b       	or	r24, r18
+	
+	}
+	
+	
+}
+  b4:	08 95       	ret
+
+000000b6 <__vector_1>:
+}
+	unsigned int N_tack=0;
+
+	//прерывания по внешнему прерыванию
+	ISR(INT0_vect)
+	{
+  b6:	1f 92       	push	r1
+  b8:	0f 92       	push	r0
+  ba:	0f b6       	in	r0, 0x3f	; 63
+  bc:	0f 92       	push	r0
+  be:	11 24       	eor	r1, r1
+  c0:	2f 93       	push	r18
+  c2:	3f 93       	push	r19
+  c4:	4f 93       	push	r20
+  c6:	5f 93       	push	r21
+  c8:	6f 93       	push	r22
+  ca:	7f 93       	push	r23
+  cc:	8f 93       	push	r24
+  ce:	9f 93       	push	r25
+  d0:	af 93       	push	r26
+  d2:	bf 93       	push	r27
+  d4:	ef 93       	push	r30
+  d6:	ff 93       	push	r31
+	if (Echo_Pin&(1<<Echo_N))
+  d8:	82 9b       	sbis	0x10, 2	; 16
+  da:	03 c0       	rjmp	.+6      	; 0xe2 <__vector_1+0x2c>
+	{
+		timer_Start_stop(Start);
+  dc:	81 e0       	ldi	r24, 0x01	; 1
+  de:	d9 df       	rcall	.-78     	; 0x92 <timer_Start_stop>
+  e0:	06 c0       	rjmp	.+12     	; 0xee <__vector_1+0x38>
+	}
+		else
+		{
+			N_tack=timer_Start_stop(Stop);
+  e2:	80 e0       	ldi	r24, 0x00	; 0
+  e4:	d6 df       	rcall	.-84     	; 0x92 <timer_Start_stop>
+  e6:	90 93 61 00 	sts	0x0061, r25
+  ea:	80 93 60 00 	sts	0x0060, r24
+		}
+	
+	}
+  ee:	ff 91       	pop	r31
+  f0:	ef 91       	pop	r30
+  f2:	bf 91       	pop	r27
+  f4:	af 91       	pop	r26
+  f6:	9f 91       	pop	r25
+  f8:	8f 91       	pop	r24
+  fa:	7f 91       	pop	r23
+  fc:	6f 91       	pop	r22
+  fe:	5f 91       	pop	r21
+ 100:	4f 91       	pop	r20
+ 102:	3f 91       	pop	r19
+ 104:	2f 91       	pop	r18
+ 106:	0f 90       	pop	r0
+ 108:	0f be       	out	0x3f, r0	; 63
+ 10a:	0f 90       	pop	r0
+ 10c:	1f 90       	pop	r1
+ 10e:	18 95       	reti
+
+00000110 <HC_SRC4_get_CM>:
+	
+	unsigned int HC_SRC4_get_CM(void)
+	{
+		HC_SR04_Send_strob();
+ 110:	b2 df       	rcall	.-156    	; 0x76 <HC_SR04_Send_strob>
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 112:	87 ea       	ldi	r24, 0xA7	; 167
+ 114:	91 e6       	ldi	r25, 0x61	; 97
+ 116:	01 97       	sbiw	r24, 0x01	; 1
+ 118:	f1 f7       	brne	.-4      	; 0x116 <HC_SRC4_get_CM+0x6>
+ 11a:	00 c0       	rjmp	.+0      	; 0x11c <HC_SRC4_get_CM+0xc>
+ 11c:	00 00       	nop
+}
+//Преобразования приходящего импульса в число 	
+unsigned int HC_SR04_Convert_CM(unsigned int N_t)
+{
+unsigned long int c;
+c=N_t*8;
+ 11e:	60 91 60 00 	lds	r22, 0x0060
+ 122:	70 91 61 00 	lds	r23, 0x0061
+ 126:	66 0f       	add	r22, r22
+ 128:	77 1f       	adc	r23, r23
+ 12a:	66 0f       	add	r22, r22
+ 12c:	77 1f       	adc	r23, r23
+ 12e:	66 0f       	add	r22, r22
+ 130:	77 1f       	adc	r23, r23
+ 132:	80 e0       	ldi	r24, 0x00	; 0
+ 134:	90 e0       	ldi	r25, 0x00	; 0
+c/=58;
+ 136:	2a e3       	ldi	r18, 0x3A	; 58
+ 138:	30 e0       	ldi	r19, 0x00	; 0
+ 13a:	40 e0       	ldi	r20, 0x00	; 0
+ 13c:	50 e0       	ldi	r21, 0x00	; 0
+ 13e:	b7 d0       	rcall	.+366    	; 0x2ae <__udivmodsi4>
+c+=2;
+ 140:	da 01       	movw	r26, r20
+ 142:	c9 01       	movw	r24, r18
+ 144:	02 96       	adiw	r24, 0x02	; 2
+ 146:	a1 1d       	adc	r26, r1
+ 148:	b1 1d       	adc	r27, r1
+	{
+		HC_SR04_Send_strob();
+		_delay_ms(100);
+		return HC_SR04_Convert_CM(N_tack);
+		
+	}
+ 14a:	08 95       	ret
+
+0000014c <Switcher>:
+	
+//функция управления оборотами двигателя в зависимости от расстояния до объекта
+void  Switcher(unsigned int Prep)
+{
+ 14c:	0f 93       	push	r16
+ 14e:	1f 93       	push	r17
+ 150:	cf 93       	push	r28
+ 152:	df 93       	push	r29
+ 154:	8c 01       	movw	r16, r24
+	if(Prep>10)
+ 156:	0b 97       	sbiw	r24, 0x0b	; 11
+ 158:	80 f0       	brcs	.+32     	; 0x17a <Switcher+0x2e>
+ 15a:	cf ef       	ldi	r28, 0xFF	; 255
+ 15c:	d1 e0       	ldi	r29, 0x01	; 1
+	{
+
+	for (int i=0;i<511;i++)
+	{
+	PORTB|=(1<<PB6);
+ 15e:	c6 9a       	sbi	0x18, 6	; 24
+	PORTB|=(1<<PB7);
+ 160:	c7 9a       	sbi	0x18, 7	; 24
+	SMforvard();
+ 162:	93 d0       	rcall	.+294    	; 0x28a <SMforvard>
+ 164:	21 97       	sbiw	r28, 0x01	; 1
+void  Switcher(unsigned int Prep)
+{
+	if(Prep>10)
+	{
+
+	for (int i=0;i<511;i++)
+ 166:	d9 f7       	brne	.-10     	; 0x15e <Switcher+0x12>
+ 168:	08 c0       	rjmp	.+16     	; 0x17a <Switcher+0x2e>
+	
+	if(Prep<10&&Prep>5)
+	{
+		
+	}
+	if(Prep<5)
+ 16a:	cf ef       	ldi	r28, 0xFF	; 255
+ 16c:	d1 e0       	ldi	r29, 0x01	; 1
+	{
+		
+		for (int i=0;i<511;i++)
+		{
+			PORTB|=(1<<PB6);
+ 16e:	c6 9a       	sbi	0x18, 6	; 24
+			PORTB|=(1<<PB7);
+ 170:	c7 9a       	sbi	0x18, 7	; 24
+			SM_back();
+ 172:	94 d0       	rcall	.+296    	; 0x29c <SM_back>
+ 174:	21 97       	sbiw	r28, 0x01	; 1
+		
+	}
+	if(Prep<5)
+	{
+		
+		for (int i=0;i<511;i++)
+ 176:	d9 f7       	brne	.-10     	; 0x16e <Switcher+0x22>
+ 178:	03 c0       	rjmp	.+6      	; 0x180 <Switcher+0x34>
+	
+	if(Prep<10&&Prep>5)
+	{
+		
+	}
+	if(Prep<5)
+ 17a:	05 30       	cpi	r16, 0x05	; 5
+ 17c:	11 05       	cpc	r17, r1
+ 17e:	a8 f3       	brcs	.-22     	; 0x16a <Switcher+0x1e>
+		}
+		
+		
+	}
+	
+}		
+ 180:	df 91       	pop	r29
+ 182:	cf 91       	pop	r28
+ 184:	1f 91       	pop	r17
+ 186:	0f 91       	pop	r16
+ 188:	08 95       	ret
+
+0000018a <main>:
+		
+	
+
+int main(void)
+{
+    Port_ini();
+ 18a:	5e df       	rcall	.-324    	; 0x48 <Port_ini>
+	HC_SR04_init();
+ 18c:	6f df       	rcall	.-290    	; 0x6c <HC_SR04_init>
+	init_interupt();
+ 18e:	7a df       	rcall	.-268    	; 0x84 <init_interupt>
+	sei();
+ 190:	78 94       	sei
+	unsigned int S;
+	
+    while (1) 
+    {
+	PORTB|=(1<<PB0);
+ 192:	c0 9a       	sbi	0x18, 0	; 24
+		S=HC_SRC4_get_CM();
+ 194:	bd df       	rcall	.-134    	; 0x110 <HC_SRC4_get_CM>
+		
+		Switcher(S);
+ 196:	da df       	rcall	.-76     	; 0x14c <Switcher>
+		
+		
+		
+		
+	
+    }
+ 198:	fc cf       	rjmp	.-8      	; 0x192 <main+0x8>
+
+0000019a <SM_set1>:
+
+}
+
+void SM_set1(void)
+{
+	SM_port|=(1<<IN1);SM_portD|=(1<<IND1);
+ 19a:	a8 9a       	sbi	0x15, 0	; 21
+ 19c:	93 9a       	sbi	0x12, 3	; 18
+	SM_port&=~(1<<IN2);SM_portD&=~(1<<IND2);
+ 19e:	a9 98       	cbi	0x15, 1	; 21
+ 1a0:	94 98       	cbi	0x12, 4	; 18
+	SM_port&=~(1<<IN3);SM_portD&=~(1<<IND3);
+ 1a2:	aa 98       	cbi	0x15, 2	; 21
+ 1a4:	95 98       	cbi	0x12, 5	; 18
+	SM_port&=~(1<<IN4);SM_portD&=~(1<<IND4);
+ 1a6:	ab 98       	cbi	0x15, 3	; 21
+ 1a8:	96 98       	cbi	0x12, 6	; 18
+ 1aa:	89 ef       	ldi	r24, 0xF9	; 249
+ 1ac:	90 e0       	ldi	r25, 0x00	; 0
+ 1ae:	01 97       	sbiw	r24, 0x01	; 1
+ 1b0:	f1 f7       	brne	.-4      	; 0x1ae <SM_set1+0x14>
+ 1b2:	00 c0       	rjmp	.+0      	; 0x1b4 <SM_set1+0x1a>
+ 1b4:	00 00       	nop
+ 1b6:	08 95       	ret
+
+000001b8 <SM_set2>:
+	SM_delay;
+
+}
+void SM_set2(void)
+{
+	SM_port|=(1<<IN1);SM_portD|=(1<<IND1);
+ 1b8:	a8 9a       	sbi	0x15, 0	; 21
+ 1ba:	93 9a       	sbi	0x12, 3	; 18
+	SM_port|=(1<<IN4);SM_portD|=(1<<IND4);
+ 1bc:	ab 9a       	sbi	0x15, 3	; 21
+ 1be:	96 9a       	sbi	0x12, 6	; 18
+	SM_port&=~(1<<IN2);SM_portD&=~(1<<IND2);
+ 1c0:	a9 98       	cbi	0x15, 1	; 21
+ 1c2:	94 98       	cbi	0x12, 4	; 18
+	SM_port&=~(1<<IN3);SM_portD&=~(1<<IND3);
+ 1c4:	aa 98       	cbi	0x15, 2	; 21
+ 1c6:	95 98       	cbi	0x12, 5	; 18
+ 1c8:	89 ef       	ldi	r24, 0xF9	; 249
+ 1ca:	90 e0       	ldi	r25, 0x00	; 0
+ 1cc:	01 97       	sbiw	r24, 0x01	; 1
+ 1ce:	f1 f7       	brne	.-4      	; 0x1cc <SM_set2+0x14>
+ 1d0:	00 c0       	rjmp	.+0      	; 0x1d2 <SM_set2+0x1a>
+ 1d2:	00 00       	nop
+ 1d4:	08 95       	ret
+
+000001d6 <SM_set3>:
+	SM_delay;
+	
+}
+void SM_set3(void)
+{
+	SM_port|=(1<<IN4);SM_portD|=(1<<IND4);
+ 1d6:	ab 9a       	sbi	0x15, 3	; 21
+ 1d8:	96 9a       	sbi	0x12, 6	; 18
+	SM_port&=~(1<<IN1);SM_portD&=~(1<<IND1);
+ 1da:	a8 98       	cbi	0x15, 0	; 21
+ 1dc:	93 98       	cbi	0x12, 3	; 18
+	SM_port&=~(1<<IN2);SM_portD&=~(1<<IND2);
+ 1de:	a9 98       	cbi	0x15, 1	; 21
+ 1e0:	94 98       	cbi	0x12, 4	; 18
+	SM_port&=~(1<<IN3);SM_portD&=~(1<<IND3);
+ 1e2:	aa 98       	cbi	0x15, 2	; 21
+ 1e4:	95 98       	cbi	0x12, 5	; 18
+ 1e6:	89 ef       	ldi	r24, 0xF9	; 249
+ 1e8:	90 e0       	ldi	r25, 0x00	; 0
+ 1ea:	01 97       	sbiw	r24, 0x01	; 1
+ 1ec:	f1 f7       	brne	.-4      	; 0x1ea <SM_set3+0x14>
+ 1ee:	00 c0       	rjmp	.+0      	; 0x1f0 <SM_set3+0x1a>
+ 1f0:	00 00       	nop
+ 1f2:	08 95       	ret
+
+000001f4 <SM_set4>:
+	SM_delay;
+	
+}
+void SM_set4(void)
+{
+	SM_port|=(1<<IN4);SM_portD|=(1<<IND4);
+ 1f4:	ab 9a       	sbi	0x15, 3	; 21
+ 1f6:	96 9a       	sbi	0x12, 6	; 18
+	SM_port|=(1<<IN3);SM_portD|=(1<<IND3);
+ 1f8:	aa 9a       	sbi	0x15, 2	; 21
+ 1fa:	95 9a       	sbi	0x12, 5	; 18
+	SM_port&=~(1<<IN1);SM_portD&=~(1<<IND1);
+ 1fc:	a8 98       	cbi	0x15, 0	; 21
+ 1fe:	93 98       	cbi	0x12, 3	; 18
+	SM_port&=~(1<<IN2);SM_portD&=~(1<<IND2);
+ 200:	a9 98       	cbi	0x15, 1	; 21
+ 202:	94 98       	cbi	0x12, 4	; 18
+ 204:	89 ef       	ldi	r24, 0xF9	; 249
+ 206:	90 e0       	ldi	r25, 0x00	; 0
+ 208:	01 97       	sbiw	r24, 0x01	; 1
+ 20a:	f1 f7       	brne	.-4      	; 0x208 <SM_set4+0x14>
+ 20c:	00 c0       	rjmp	.+0      	; 0x20e <SM_set4+0x1a>
+ 20e:	00 00       	nop
+ 210:	08 95       	ret
+
+00000212 <SM_set5>:
+	SM_delay;
+	
+}
+void SM_set5(void)
+{
+	SM_port|=(1<<IN3);SM_portD|=(1<<IND3);
+ 212:	aa 9a       	sbi	0x15, 2	; 21
+ 214:	95 9a       	sbi	0x12, 5	; 18
+	SM_port&=~(1<<IN1);SM_portD&=~(1<<IND1);
+ 216:	a8 98       	cbi	0x15, 0	; 21
+ 218:	93 98       	cbi	0x12, 3	; 18
+	SM_port&=~(1<<IN2);SM_portD&=~(1<<IND2);
+ 21a:	a9 98       	cbi	0x15, 1	; 21
+ 21c:	94 98       	cbi	0x12, 4	; 18
+	SM_port&=~(1<<IN4);SM_portD&=~(1<<IND4);
+ 21e:	ab 98       	cbi	0x15, 3	; 21
+ 220:	96 98       	cbi	0x12, 6	; 18
+ 222:	89 ef       	ldi	r24, 0xF9	; 249
+ 224:	90 e0       	ldi	r25, 0x00	; 0
+ 226:	01 97       	sbiw	r24, 0x01	; 1
+ 228:	f1 f7       	brne	.-4      	; 0x226 <SM_set5+0x14>
+ 22a:	00 c0       	rjmp	.+0      	; 0x22c <SM_set5+0x1a>
+ 22c:	00 00       	nop
+ 22e:	08 95       	ret
+
+00000230 <SM_set6>:
+	SM_delay;
+	
+}
+void SM_set6(void)
+{
+	SM_port|=(1<<IN3);SM_portD|=(1<<IND3);
+ 230:	aa 9a       	sbi	0x15, 2	; 21
+ 232:	95 9a       	sbi	0x12, 5	; 18
+	SM_port|=(1<<IN2);SM_portD|=(1<<IND2);
+ 234:	a9 9a       	sbi	0x15, 1	; 21
+ 236:	94 9a       	sbi	0x12, 4	; 18
+	SM_port&=~(1<<IN1);SM_portD&=~(1<<IND1);
+ 238:	a8 98       	cbi	0x15, 0	; 21
+ 23a:	93 98       	cbi	0x12, 3	; 18
+	SM_port&=~(1<<IN4);SM_portD&=~(1<<IND4);
+ 23c:	ab 98       	cbi	0x15, 3	; 21
+ 23e:	96 98       	cbi	0x12, 6	; 18
+ 240:	89 ef       	ldi	r24, 0xF9	; 249
+ 242:	90 e0       	ldi	r25, 0x00	; 0
+ 244:	01 97       	sbiw	r24, 0x01	; 1
+ 246:	f1 f7       	brne	.-4      	; 0x244 <SM_set6+0x14>
+ 248:	00 c0       	rjmp	.+0      	; 0x24a <SM_set6+0x1a>
+ 24a:	00 00       	nop
+ 24c:	08 95       	ret
+
+0000024e <SM_set7>:
+	SM_delay;
+	
+}
+void SM_set7(void)
+{
+	SM_port|=(1<<IN2);SM_portD|=(1<<IND2);
+ 24e:	a9 9a       	sbi	0x15, 1	; 21
+ 250:	94 9a       	sbi	0x12, 4	; 18
+	SM_port&=~(1<<IN1);SM_portD&=~(1<<IND1);
+ 252:	a8 98       	cbi	0x15, 0	; 21
+ 254:	93 98       	cbi	0x12, 3	; 18
+	SM_port&=~(1<<IN3);SM_portD&=~(1<<IND3);
+ 256:	aa 98       	cbi	0x15, 2	; 21
+ 258:	95 98       	cbi	0x12, 5	; 18
+	SM_port&=~(1<<IN4);SM_portD&=~(1<<IND4);
+ 25a:	ab 98       	cbi	0x15, 3	; 21
+ 25c:	96 98       	cbi	0x12, 6	; 18
+ 25e:	89 ef       	ldi	r24, 0xF9	; 249
+ 260:	90 e0       	ldi	r25, 0x00	; 0
+ 262:	01 97       	sbiw	r24, 0x01	; 1
+ 264:	f1 f7       	brne	.-4      	; 0x262 <SM_set7+0x14>
+ 266:	00 c0       	rjmp	.+0      	; 0x268 <SM_set7+0x1a>
+ 268:	00 00       	nop
+ 26a:	08 95       	ret
+
+0000026c <SM_set8>:
+	SM_delay;
+	
+}
+void SM_set8(void)
+{
+	SM_port|=(1<<IN1);SM_portD|=(1<<IND1);
+ 26c:	a8 9a       	sbi	0x15, 0	; 21
+ 26e:	93 9a       	sbi	0x12, 3	; 18
+	SM_port|=(1<<IN2);SM_portD|=(1<<IND2);
+ 270:	a9 9a       	sbi	0x15, 1	; 21
+ 272:	94 9a       	sbi	0x12, 4	; 18
+	SM_port&=~(1<<IN3);SM_portD&=~(1<<IND3);
+ 274:	aa 98       	cbi	0x15, 2	; 21
+ 276:	95 98       	cbi	0x12, 5	; 18
+	SM_port&=~(1<<IN4);SM_portD&=~(1<<IND4);
+ 278:	ab 98       	cbi	0x15, 3	; 21
+ 27a:	96 98       	cbi	0x12, 6	; 18
+ 27c:	89 ef       	ldi	r24, 0xF9	; 249
+ 27e:	90 e0       	ldi	r25, 0x00	; 0
+ 280:	01 97       	sbiw	r24, 0x01	; 1
+ 282:	f1 f7       	brne	.-4      	; 0x280 <SM_set8+0x14>
+ 284:	00 c0       	rjmp	.+0      	; 0x286 <SM_set8+0x1a>
+ 286:	00 00       	nop
+ 288:	08 95       	ret
+
+0000028a <SMforvard>:
+	
+}
+
+void SMforvard(void)
+{
+	SM_set1();
+ 28a:	87 df       	rcall	.-242    	; 0x19a <SM_set1>
+	SM_set2();
+ 28c:	95 df       	rcall	.-214    	; 0x1b8 <SM_set2>
+	SM_set3();
+ 28e:	a3 df       	rcall	.-186    	; 0x1d6 <SM_set3>
+	SM_set4();
+ 290:	b1 df       	rcall	.-158    	; 0x1f4 <SM_set4>
+	SM_set5();
+ 292:	bf df       	rcall	.-130    	; 0x212 <SM_set5>
+	SM_set6();
+ 294:	cd df       	rcall	.-102    	; 0x230 <SM_set6>
+	SM_set7();
+ 296:	db df       	rcall	.-74     	; 0x24e <SM_set7>
+	SM_set8();
+ 298:	e9 df       	rcall	.-46     	; 0x26c <SM_set8>
+ 29a:	08 95       	ret
+
+0000029c <SM_back>:
+}
+
+void SM_back(void)
+{
+	SM_set8();
+ 29c:	e7 df       	rcall	.-50     	; 0x26c <SM_set8>
+	SM_set7();
+ 29e:	d7 df       	rcall	.-82     	; 0x24e <SM_set7>
+	SM_set6();
+ 2a0:	c7 df       	rcall	.-114    	; 0x230 <SM_set6>
+	SM_set5();
+ 2a2:	b7 df       	rcall	.-146    	; 0x212 <SM_set5>
+	SM_set4();
+ 2a4:	a7 df       	rcall	.-178    	; 0x1f4 <SM_set4>
+	SM_set3();
+ 2a6:	97 df       	rcall	.-210    	; 0x1d6 <SM_set3>
+	SM_set2();
+ 2a8:	87 df       	rcall	.-242    	; 0x1b8 <SM_set2>
+	SM_set1();
+ 2aa:	77 df       	rcall	.-274    	; 0x19a <SM_set1>
+ 2ac:	08 95       	ret
+
+000002ae <__udivmodsi4>:
+ 2ae:	a1 e2       	ldi	r26, 0x21	; 33
+ 2b0:	1a 2e       	mov	r1, r26
+ 2b2:	aa 1b       	sub	r26, r26
+ 2b4:	bb 1b       	sub	r27, r27
+ 2b6:	fd 01       	movw	r30, r26
+ 2b8:	0d c0       	rjmp	.+26     	; 0x2d4 <__udivmodsi4_ep>
+
+000002ba <__udivmodsi4_loop>:
+ 2ba:	aa 1f       	adc	r26, r26
+ 2bc:	bb 1f       	adc	r27, r27
+ 2be:	ee 1f       	adc	r30, r30
+ 2c0:	ff 1f       	adc	r31, r31
+ 2c2:	a2 17       	cp	r26, r18
+ 2c4:	b3 07       	cpc	r27, r19
+ 2c6:	e4 07       	cpc	r30, r20
+ 2c8:	f5 07       	cpc	r31, r21
+ 2ca:	20 f0       	brcs	.+8      	; 0x2d4 <__udivmodsi4_ep>
+ 2cc:	a2 1b       	sub	r26, r18
+ 2ce:	b3 0b       	sbc	r27, r19
+ 2d0:	e4 0b       	sbc	r30, r20
+ 2d2:	f5 0b       	sbc	r31, r21
+
+000002d4 <__udivmodsi4_ep>:
+ 2d4:	66 1f       	adc	r22, r22
+ 2d6:	77 1f       	adc	r23, r23
+ 2d8:	88 1f       	adc	r24, r24
+ 2da:	99 1f       	adc	r25, r25
+ 2dc:	1a 94       	dec	r1
+ 2de:	69 f7       	brne	.-38     	; 0x2ba <__udivmodsi4_loop>
+ 2e0:	60 95       	com	r22
+ 2e2:	70 95       	com	r23
+ 2e4:	80 95       	com	r24
+ 2e6:	90 95       	com	r25
+ 2e8:	9b 01       	movw	r18, r22
+ 2ea:	ac 01       	movw	r20, r24
+ 2ec:	bd 01       	movw	r22, r26
+ 2ee:	cf 01       	movw	r24, r30
+ 2f0:	08 95       	ret
+
+000002f2 <_exit>:
+ 2f2:	f8 94       	cli
+
+000002f4 <__stop_program>:
+ 2f4:	ff cf       	rjmp	.-2      	; 0x2f4 <__stop_program>

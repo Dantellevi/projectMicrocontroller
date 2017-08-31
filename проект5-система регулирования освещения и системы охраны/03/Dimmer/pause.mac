@@ -1,0 +1,37 @@
+; === макросы задержек
+
+Pause1      macro       t1
+            local       wr ; объ€вление локальной метки !
+            movlw       t1
+            movwf       Reg
+wr          decfsz      Reg, F
+            goto        wr
+            endm
+
+Pause2      macro       t1,t2
+            local       wr ; объ€вление локальной метки !
+            movlw       t1
+            movwf       Reg
+            movlw       t2
+            movwf       Reg+1
+wr          decfsz      Reg, F
+            goto        wr
+            decfsz      Reg+1, F
+            goto        wr
+            endm
+
+Pause3      macro       t1,t2,t3
+            local       wr ; объ€вление локальной метки !
+            movlw       t1
+            movwf       Reg
+            movlw       t2
+            movwf       Reg+1
+            movlw       t3
+            movwf       Reg+2
+wr          decfsz      Reg, F
+            goto        wr
+            decfsz      Reg+1, F
+            goto        wr
+            decfsz      Reg+2, F
+            goto        wr
+            endm
